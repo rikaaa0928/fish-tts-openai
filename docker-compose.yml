@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  fish-openai-proxy:
+    build: .
+    container_name: fish_openai_proxy
+    ports:
+      - "8000:8000"
+    environment:
+      # 在这里配置你的 Fish TTS 环境变量
+      - FISH_TTS_URL=http://192.168.0.69:8080/v1/tts
+      - FISH_TTS_KEY=key
+      - PORT=8000
+    restart: unless-stopped
