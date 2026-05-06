@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 # 安装 uv (推荐的 Docker 安装方式)
-COPY --from=docker.xiaomi.dad/ghcr/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # 设置工作目录
 WORKDIR /app
