@@ -35,15 +35,16 @@ async def create_speech(request: Request):
     # Optional parameters that can be passed
     chunk_length = body.get("chunk_length", 300)
     temperature = body.get("temperature", 1.0)
-    is_stream = body.get("stream", False)
+    # is_stream = body.get("stream", False)
+    is_stream = False
 
+    # Fish TTS payload - removed 'stream' and 'chunk_length' as per requirements
     fish_payload = {
         "text": text,
         "reference_id": voice,
         "format": response_format,
         "chunk_length": chunk_length,
         "temperature": temperature,
-        "stream": is_stream
     }
 
     headers = {
@@ -53,9 +54,11 @@ async def create_speech(request: Request):
     }
 
     client = httpx.AsyncClient(timeout=120.0)
-    req = client.build_request("POST", FISH_TTS_URL, json=fish_payload, headers=headers)
     
     try:
+        # Build request to Fish TTS
+        req = client.build_request("POST", FISH_TTS_URL, json=fish_payload, headers=headers)
+        # We still use stream=True in httpx to read the response efficiently
         resp = await client.send(req, stream=True)
     except Exception as e:
         await client.aclose()
@@ -64,6 +67,7 @@ async def create_speech(request: Request):
     if resp.status_code != 200:
         await resp.aread()
         text_err = resp.text
+        await resp.aclose()
         await client.aclose()
         raise HTTPException(status_code=resp.status_code, detail=f"Fish TTS error: {text_err}")
 
@@ -83,10 +87,10 @@ async def create_speech(request: Request):
     else:
         try:
             content = await resp.aread()
+            return Response(content=content, media_type=media_type)
         finally:
             await resp.aclose()
             await client.aclose()
-        return Response(content=content, media_type=media_type)
 
 if __name__ == "__main__":
     import uvicorn
