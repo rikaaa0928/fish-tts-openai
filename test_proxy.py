@@ -6,12 +6,45 @@
 # ///
 
 from openai import OpenAI
+from openai import AuthenticationError
 import os
+import sys
 
-client = OpenAI(
-    api_key="dummy_key",
-    base_url="http://localhost:8000/v1"
-)
+# Test auth failures if PROXY_API_KEY is configured
+PROXY_API_KEY = os.getenv("PROXY_API_KEY")
+
+if PROXY_API_KEY:
+    print("Testing with invalid key...")
+    invalid_client = OpenAI(
+        api_key="invalid_key",
+        base_url="http://localhost:8000/v1"
+    )
+    try:
+        invalid_client.audio.speech.create(
+            model="tts-1",
+            voice="shantianfang",
+            input="test",
+            response_format="mp3"
+        )
+        print("Error: Invalid key was accepted!")
+        sys.exit(1)
+    except AuthenticationError as e:
+        print(f"Successfully caught expected authentication error: {e}")
+    except Exception as e:
+        print(f"Unexpected error when using invalid key: {e}")
+        sys.exit(1)
+
+    print("\nTesting with valid key...")
+    client = OpenAI(
+        api_key=PROXY_API_KEY,
+        base_url="http://localhost:8000/v1"
+    )
+else:
+    print("Testing without token authentication...")
+    client = OpenAI(
+        api_key="dummy_key",
+        base_url="http://localhost:8000/v1"
+    )
 
 text_input = "这是一段测试音频的文本，用来验证系统是否正常工作。在这个快速变化的时代，每一个人都应该有机会接触到最前沿的技术。"
 
