@@ -1,2 +1,6 @@
 *.mp3
 *.wav
+
+# Added by cargo
+
+/target
