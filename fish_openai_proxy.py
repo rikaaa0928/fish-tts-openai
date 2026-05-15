@@ -16,9 +16,15 @@ app = FastAPI(title="Fish TTS to OpenAI Proxy")
 
 FISH_TTS_URL = os.getenv("FISH_TTS_URL", "http://192.168.0.69:8080/v1/tts")
 FISH_TTS_KEY = os.getenv("FISH_TTS_KEY", "key")
+PROXY_API_KEY = os.getenv("PROXY_API_KEY")
 
 @app.post("/v1/audio/speech")
 async def create_speech(request: Request):
+    if PROXY_API_KEY:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or auth_header != f"Bearer {PROXY_API_KEY}":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
     try:
         body = await request.json()
     except Exception:
