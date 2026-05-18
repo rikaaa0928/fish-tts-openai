@@ -10,4 +10,5 @@ services:
       - FISH_TTS_URL=http://192.168.0.69:8080/v1/tts
       - FISH_TTS_KEY=key
       - PORT=8000
+      - PROXY_API_KEY=key
     restart: unless-stopped
