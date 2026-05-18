@@ -1,10 +1,10 @@
 # Build stage
-FROM rust:1.85-slim AS builder
+FROM rust:1.95-alpine AS builder
 
 WORKDIR /usr/src/app
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y pkg-config libssl-dev
+RUN apk add --no-cache musl-dev
 
 COPY Cargo.toml Cargo.lock ./
 # Create dummy src file to build dependencies and cache them
@@ -17,10 +17,10 @@ COPY src ./src
 RUN cargo build --release
 
 # Final stage
-FROM debian:bookworm-slim
+FROM alpine:latest
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies (ca-certificates for HTTPs requests)
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
