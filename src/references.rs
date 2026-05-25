@@ -1,7 +1,7 @@
 use axum::{
     body::Body,
     extract::{Request, State},
-    http::{header, StatusCode},
+    http::{StatusCode, header},
     response::Response,
 };
 use tracing::error;
@@ -47,9 +47,7 @@ pub async fn add_reference(
     proxy_response(fish_res).await
 }
 
-pub async fn list_references(
-    State(state): State<AppState>,
-) -> Result<Response, StatusCode> {
+pub async fn list_references(State(state): State<AppState>) -> Result<Response, StatusCode> {
     let base = fish_base_url(&state.fish_tts_url);
     let fish_res = state
         .client
@@ -80,7 +78,7 @@ pub async fn delete_reference(
     let base = fish_base_url(&state.fish_tts_url);
     let fish_res = state
         .client
-        .post(format!("{}/v1/references/delete", base))
+        .delete(format!("{}/v1/references/delete", base))
         .header(
             header::AUTHORIZATION,
             format!("Bearer {}", state.fish_tts_key),
@@ -99,8 +97,8 @@ pub async fn delete_reference(
 }
 
 async fn proxy_response(resp: reqwest::Response) -> Result<Response, StatusCode> {
-    let status = StatusCode::from_u16(resp.status().as_u16())
-        .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+    let status =
+        StatusCode::from_u16(resp.status().as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
 
     let mut builder = Response::builder().status(status);
 

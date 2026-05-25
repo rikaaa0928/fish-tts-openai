@@ -4,4 +4,6 @@
 # Added by cargo
 
 /target
-docker-compose.yml 
+docker-compose.yml
+.venv
+__pycache__
