@@ -22,7 +22,7 @@ pub async fn add_reference(
         .cloned()
         .ok_or(StatusCode::BAD_REQUEST)?;
 
-    let body_bytes = axum::body::to_bytes(req.into_body(), 50 * 1024 * 1024)
+    let body_bytes = axum::body::to_bytes(req.into_body(), 100 * 1024 * 1024)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 

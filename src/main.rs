@@ -43,6 +43,7 @@ async fn main() {
     };
 
     let app = Router::new()
+        .route("/v1/tts", post(speech::proxy_tts))
         .route("/v1/audio/speech", post(speech::create_speech))
         .route("/v1/references/add", post(references::add_reference))
         .route("/v1/references/list", get(references::list_references))

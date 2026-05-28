@@ -11,6 +11,58 @@ use tracing::error;
 
 use crate::AppState;
 
+pub async fn proxy_tts(
+    State(state): State<AppState>,
+    req: Request<Body>,
+) -> Result<Response, StatusCode> {
+    let content_type = req
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .cloned()
+        .unwrap_or_else(|| HeaderValue::from_static("application/json"));
+
+    let bytes = axum::body::to_bytes(req.into_body(), 10 * 1024 * 1024)
+        .await
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let mut upstream = state
+        .client
+        .post(&state.fish_tts_url)
+        .header(
+            header::AUTHORIZATION,
+            format!("Bearer {}", state.fish_tts_key),
+        )
+        .header(header::CONTENT_TYPE, content_type);
+
+    upstream = upstream.body(bytes);
+
+    let fish_res = upstream.send().await.map_err(|e| {
+        error!("Failed to connect to Fish TTS: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let status = fish_res.status();
+    let resp_content_type = fish_res
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .cloned()
+        .unwrap_or_else(|| HeaderValue::from_static("application/octet-stream"));
+
+    let stream = fish_res.bytes_stream();
+    let body = Body::from_stream(stream);
+
+    let mut response = Response::builder()
+        .status(StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR))
+        .body(body)
+        .unwrap();
+
+    response
+        .headers_mut()
+        .insert(header::CONTENT_TYPE, resp_content_type);
+
+    Ok(response)
+}
+
 #[derive(Serialize, Debug)]
 struct FishTtsPayload {
     text: String,
@@ -24,7 +76,7 @@ pub async fn create_speech(
     State(state): State<AppState>,
     req: Request<Body>,
 ) -> Result<Response, StatusCode> {
-    let bytes = axum::body::to_bytes(req.into_body(), 2 * 1024 * 1024)
+    let bytes = axum::body::to_bytes(req.into_body(), 10 * 1024 * 1024)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
