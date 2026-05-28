@@ -9,6 +9,23 @@ RUN apk add --no-cache musl-dev
 COPY Cargo.toml Cargo.lock ./
 # Create dummy src file to build dependencies and cache them
 RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN <<EOF_SCRIPT
+# 1. 创建目录（如果环境变量未定义，默认会使用 $HOME/.cargo）
+mkdir -vp \${CARGO_HOME:-\$HOME/.cargo}
+
+# 2. 写入镜像源配置
+cat << EOF | tee -a \${CARGO_HOME:-\$HOME/.cargo}/config.toml
+[source.crates-io]
+replace-with = 'mirror'
+
+[source.mirror]
+registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"
+
+[registries.mirror]
+index = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"
+EOF
+
+EOF_SCRIPT
 RUN cargo build --release
 RUN rm -f target/release/deps/fish_openai_proxy*
 
